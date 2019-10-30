@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title></title>
+		<script src="https://cdn.bootcss.com/vue/2.5.17-beta.0/vue.js"></script>
+		<script src="https://cdn.bootcss.com/vuex/3.1.0/vuex.js"></script>
+		<script src="https://cdn.bootcss.com/axios/0.18.0/axios.min.js"></script>
+	</head>
+	<body>
+		<div id="app">
+			<lists></lists>
+			<footer-cart ></footer-cart>
+		</div>
+		<script type="text/x-template" id="lists">
+			<div>
+				
+				<div v-if="goods.length==0">购物车没有商品，<a href="https://wx.gmzx.com/">去购物车吧</a></div>
+				<div v-if="goods.length>0">
+					<h2>购物车</h2>
+					<table border="1" width="90%">
+						<tr><th>编号</th><th>名称</th><th>价格</th><th>数量</th><th>总价</th><th>操作</th></tr>
+						<tr v-for="v in goods">
+							<td>{{v.id}}</td>
+							<td>{{v.title}}</td>
+							<td>{{v.price}}</td>
+							<!--<td>{{v.num}}</td>-->
+							<td>
+								<input type="text" v-model="v.num" />
+							</td>
+							<td>{{v.totalPrice}}</td>
+							<td>
+								<button @click="del(v.id)">删除</button>
+							</td>
+						</tr>
+					</table>
+				</div>
+			</div>
+			
+		</script>
+		<script type="text/x-template" id="footerCart">
+			<div>
+				<div v-if="totalPrice>0">总计：{{totalPrice}}</div>
+			</div>
+			
+		</script>
+		
+		
+		<script type="text/javascript">
+//			子组件
+			var lists = {
+				template:'#lists',
+				computed:{ //使用计算属性从仓库里面拿数据  当里面的数据发生变化时里面的值也跟着变化
+//					totalPrice(){
+//						return this.$store.getters.totalPrice;
+//					},
+					goods(){
+						return this.$store.getters.goods; //子组件能通过 this.$store 访问到数据
+					}
+				},
+				methods:{
+					del(id){
+						this.$store.commit('del',{id}) //执行commit为了调用mutations里面的方法
+					},
+					
+				}
+			}
+			
+//			子组件		
+//			将总价生成新组件用于统计
+			var footerCart = {
+				template:'#footerCart',
+				computed:{ //使用计算属性从仓库里面拿数据  当里面的数据发生变化时里面的值也跟着变化
+					totalPrice(){
+						return this.$store.getters.totalPrice;
+					}
+				}
+			}
+			
+			
+			 //Vuex 允许我们将 store 分割成模块（module）。每个模块拥有自己的 state、mutation、action、getter、
+			 //甚至是嵌套子模块——从上至下进行同样方式的分割：
+			const cartModule = { 
+				state:{ //数据存放地
+					totalPrice:100,
+					goods:[]
+				},
+				getters:{  //使用getters高效的获取购物车商品总价   getters获取仓库里面的数据
+					//获取商品总价
+					totalPrice:state=>{
+						let totalPrice = 0;
+						state.goods.forEach((v)=>{
+							totalPrice += v.num * v.price
+						})
+						return totalPrice
+					},
+					//获取商品并计算每件商品的总价
+					goods(state){
+						let goods = state.goods;
+						goods.forEach((v)=>{
+							v.totalPrice = v.num * v.price
+						});
+						return goods
+					}
+//					
+				},
+				
+				mutations:{ //修改仓库里面的数据
+					//删除购物车的商品
+					del(state,param) {
+						console.log(param)
+						let k;
+						for(let i=0;i<state.goods.length;i++){
+							if(state.goods[i].id==param.id){ //商品的id等于传过去param.id
+								k=i;break
+							}
+							
+						}
+						state.goods.splice(k,1)
+					},
+					setGoods(state,param){
+						state.goods = param.goods
+					}
+				},
+				
+				actions: { //actions处理异步更改数据  通过actions从后台拿数据
+					loadGoodes(store){  //在根组件mounted（）触发
+						//https://www.kancloud.cn/yunye/axios/234845
+						axios.get('text.json').then(function (response) {
+						  	store.commit('setGoods',{goods:response.data.goods})
+						    console.log(response.data.goods);
+						  })
+						  
+					}
+				}
+			}
+			
+			const store = new Vuex.Store({  //先创建一个仓库
+				//项目特别复杂的时候，可以让每一个模块拥有自己的state、mutation、getters、action,使结构非常清晰，方便管理
+				modules: { 
+					cart:cartModule
+				}
+				
+			});
+			
+			var app = new Vue({  //跟组件
+				el:'#app',
+				 // 把 store 对象提供给 “store” 选项，这可以把 store 的实例注入所有的子组件
+				store,
+				components:{
+					lists,
+					footerCart
+				},
+				mounted(){ //在根目录下触发actions里的事件
+					this.$store.dispatch('loadGoodes');//Action 通过 store.dispatch 方法触发：
+				}
+			})
+		</script>
+	</body>
+</html>

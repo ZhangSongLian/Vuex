@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<script src="https://cdn.bootcss.com/vue/2.5.17-beta.0/vue.js"></script>
+		<script src="https://cdn.bootcss.com/vuex/3.1.0/vuex.js"></script>
+		<script src="https://cdn.bootcss.com/axios/0.18.0/axios.min.js"></script>
+	</head>
+	<body>
+		<div id="app">
+			<!--把组件的共享状态抽取出来，以一个全局单例模式管理-->
+			<!--vuex中，有默认的五种基本的对象：
+			state：存储状态（变量）
+			getters：对数据获取之前的再次编译，可以理解为state的计算属性。我们在组件中使用 $store.getters.fun()
+			mutations：修改状态，并且是同步的。在组件中使用$store.commit('',params)。这个和我们组件中的自定义事件类似。
+			actions：包含任何异步操作。在组件中 通过 store.dispatch（""） 方法触发：
+			modules：store的子模块，为了开发大型项目，方便状态管理而使用的。这里我们就不解释了，用起来和上面的一样。-->
+			<Counter></Counter>
+		</div>
+		<script type="text/javascript">
+			//创建一个子组件
+			const Counter  = {
+				template:`<div>
+					{{count}}
+					<button @click="handleIncrementMore">加5</button>
+					<button @click="handleAsyncIncrement">async +1</button>
+				</div>`,
+				computed:{
+					count(){
+						return this.$store.state.cart.count;
+					},
+					
+					doneTodosCount(){
+						return this.$store.getters.doneTodos
+					}
+				},
+				methods: {
+					handleIncrement(){
+						this.$store.commit('increment');
+					},
+					handleIncrementMore(){
+						this.$store.commit('incrementMore',5);
+					},
+					
+					handleAsyncIncrement () {
+		                this.$store.dispatch('asyncIncrement').then(() => {
+		                	console.log(this.$store.state.count);
+		                })
+		            }
+				}
+				
+			}
+			
+			const cartModule = {
+				
+				state:{  //state是属于局部的
+					count: 0,
+					todos: [
+				      { id: 1, text: '...', done: true },
+				      { id: 2, text: '...', done: false }
+				    ]
+				},
+				getters:{ //允许组件从store中获取数据
+					doneTodos:state => {
+						return state.todos.filter(todo =>todo.done)
+					},
+//					Getter 也可以接受其他 getter 作为第二个参数：
+					doneTodosCount:(state,getters) =>{
+						return getters.doneTodos.length;
+					}
+				},
+				
+//				改 Vuex 的 store 中的状态的唯一方法是提交 mutation。
+//			 mutation 必须是同步函数
+				mutations:{
+					increment(state){
+						state.count++
+					},
+					incrementMore(state,n=1){
+						state.count += n
+					}
+				},
+//				Action 提交的是 mutation，而不是直接变更状态。
+//				Action 可以包含任意异步操作。
+				actions:{
+					increment (context) {
+				      context.commit('increment')
+				 	 },
+
+				   asyncIncrement(context){
+			            return new Promise(resolve => {
+			                setTimeout(() => {
+			                    context.commit('increment');
+			                    resolve();
+			                }, 1000)
+			            });
+			        }
+				   
+				}
+			}
+			
+			const store = new Vuex.Store({
+				//项目特别复杂的时候，可以让每一个模块拥有自己的state、mutation、getters、action,使结构非常清晰，方便管理
+				modules: { 
+					cart:cartModule
+				}
+				
+			})
+
+			var vm = new Vue({
+				el:"#app",
+				store,
+				 components: {Counter},
+				  data:{
+				  	
+				  }
+				
+			})
+		</script>
+	</body>
+</html>

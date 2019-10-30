@@ -1,0 +1,19 @@
+{
+  "name": "小明",
+  "age": 14,
+  "gender": true,
+  "height": 1.65,
+  "grade": null,
+  "middle-school": "\"W3C\" Middle School",
+  "skills": [
+    "JavaScript",
+    "Java",
+    "Python",
+    "Lisp"
+  ],
+  "goods":[
+				{"id":1,"title":"iphone7Plus","price":"3999","num":2},
+				{"id":2,"title":"hdcms系统","price":"1999","num":3}
+	]
+  
+}
